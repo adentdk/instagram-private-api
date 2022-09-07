@@ -149,6 +149,24 @@ ___
 
 [src/services/publish.service.ts:154](https://github.com/Nerixyz/instagram-private-api/blob/b3351b9/src/services/publish.service.ts#L154)
 
+### reels
+
+▸ **reels**(`options`): `Promise`<[`MediaRepositoryConfigureResponseRootObject`](../../interfaces/responses/MediaRepositoryConfigureResponseRootObject.md)\>
+
+#### Parameters
+
+| Name | Type |
+| :------ | :------ |
+| `options` | [`PostingVideoOptions`](../../interfaces/types/PostingVideoOptions.md) |
+
+#### Returns
+
+`Promise`<[`MediaRepositoryConfigureResponseRootObject`](../../interfaces/responses/MediaRepositoryConfigureResponseRootObject.md)\>
+
+#### Defined in
+
+[src/services/publish.service.ts:154](https://github.com/Nerixyz/instagram-private-api/blob/b3351b9/src/services/publish.service.ts#L154)
+
 ___
 
 ### catchTranscodeError

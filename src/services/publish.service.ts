@@ -208,6 +208,64 @@ export class PublishService extends Repository {
     }
   }
 
+  public async reels(options: PostingVideoOptions) {
+    const uploadId = Date.now().toString();
+    const videoInfo = PublishService.getVideoInfo(options.video);
+    PublishService.publishDebug(`Publishing video to timeline: ${JSON.stringify(videoInfo)}`);
+    await Bluebird.try(() =>
+      this.regularVideo({
+        video: options.video,
+        uploadId,
+        isReels: true,
+        ...videoInfo,
+      }),
+    ).catch(IgResponseError, error => {
+      throw new IgUploadVideoError(error.response as IgResponse<UploadRepositoryVideoResponseRootObject>, videoInfo);
+    });
+    await this.client.upload.photo({
+      file: options.coverImage,
+      uploadId: uploadId.toString(),
+    });
+
+    await Bluebird.try(() =>
+      this.client.media.uploadFinish({
+        upload_id: uploadId,
+        source_type: '4',
+        video: { length: videoInfo.duration / 1000.0 },
+      }),
+    ).catch(IgResponseError, PublishService.catchTranscodeError(videoInfo, options.transcodeDelay || 5000));
+
+    const configureOptions: MediaConfigureTimelineVideoOptions = {
+      upload_id: uploadId.toString(),
+      caption: options.caption,
+      length: videoInfo.duration / 1000.0,
+      width: videoInfo.width,
+      height: videoInfo.height,
+      clips: [
+        {
+          length: videoInfo.duration / 1000.0,
+          source_type: '4',
+        },
+      ],
+      ...PublishService.makeLocationOptions(options.location),
+    };
+
+    if (typeof options.usertags !== 'undefined') {
+      configureOptions.usertags = options.usertags;
+    }
+
+    for (let i = 0; i < 6; i++) {
+      try {
+        return await this.client.media.configureVideo(configureOptions);
+      } catch (e) {
+        if (i >= 5 || e.response.statusCode >= 400) {
+          throw new IgConfigureVideoError(e.response, configureOptions);
+        }
+        await Bluebird.delay((i + 1) * 2 * 1000);
+      }
+    }
+  }
+
   public async album(options: PostingAlbumOptions) {
     const isPhoto = (arg: PostingAlbumItem): arg is PostingAlbumPhotoItem =>
       (arg as PostingAlbumPhotoItem).file !== undefined;
